@@ -58,13 +58,17 @@ function promptQuantity(inputId, inventory) {
     ])
     .then(function(val) {
       var inputQuantity = parseInt(val.input);
+      var remainingQuant = remainingQuantity(inputQuantity, inputId, inventory);
+
       // check if id exists, if not then prompt again
-      if (checkQuantity(inputQuantity, inputId, inventory)) {
+      if (checkQuantity(inputQuantity, inputId, inventory)) {  
+        var updatedQuant = remainingQuant - inputQuantity;
+
         connection.query(
             "UPDATE products SET ? WHERE ?",
             [
               {
-                stock_quantity: inputQuantity
+                stock_quantity: updatedQuant
               },
               {
                 item_id: inputId
@@ -73,12 +77,13 @@ function promptQuantity(inputId, inventory) {
             function(error) {
               if (error) throw err;
               console.log("Order placed successfully!");
-              console.log("Your Total Comes To: " + caluculateTotal(inputQuantity, inputId, inventory));
+              console.log("Your Total Comes To: $" + caluculateTotal(inputQuantity, inputId, inventory));
               connection.end();
             }
           );
       } else {
-        console.log("There is not enough quantity for that order");
+        console.log("There is not enough quantity for that order.");
+        console.log("Please order " + remainingQuant + " or less");
         promptQuantity(inputId, inventory);
       }
     });
@@ -107,13 +112,11 @@ function checkQuantity(inputQuantity, inputId, inventory) {
 }
 
 function productName(inputId, inventory) {
-  var productName;
   for (var i = 0; i < inventory.length; i++) {
     if (inventory[i].item_id === inputId) {
-      productName = inventory[i].product_name;
+      return inventory[i].product_name;
     };
   };
-  return productName;
 }
 
 function caluculateTotal(inputQuantity, inputId, inventory) {
@@ -124,4 +127,12 @@ function caluculateTotal(inputQuantity, inputId, inventory) {
     };
   }
   return totalCost;
+}
+
+function remainingQuantity(inputQuantity, inputId, inventory) {
+  for (var i = 0; i < inventory.length; i++) {
+    if (inventory[i].item_id === inputId) {
+      return parseInt(inventory[i].stock_quantity);
+    };
+  }
 }
